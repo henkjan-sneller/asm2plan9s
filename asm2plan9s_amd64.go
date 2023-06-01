@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"regexp"
@@ -30,6 +31,8 @@ import (
 
 // as: assemble instruction by either invoking yasm or gas
 func as(instructions []Instruction) error {
+
+	//log.Printf("instructions %v", instructions)
 
 	// First to yasm (will return error when not installed)
 	e := yasm(instructions)
@@ -73,17 +76,23 @@ func gas(instructions []Instruction) error {
 		return err
 	}
 
+	contentForDebugging := ""
+
 	for _, instr := range instructions {
 		instrFields := strings.Split(instr.instruction, "/*")
 		if len(instrFields) == 1 {
 			instrFields = strings.Split(instr.instruction, ";") // try again with ; separator
 		}
 		content := []byte(instrFields[0] + "\n")
+		log.Printf("retrieved line: %v", string(content))
 
-		if _, err := tmpfile.Write([]byte(content)); err != nil {
+		if _, err := tmpfile.Write(content); err != nil {
 			return err
 		}
+		contentForDebugging += string(content)
 	}
+
+	log.Printf("\nDone handling instructions")
 
 	if err := tmpfile.Close(); err != nil {
 		return err
@@ -109,12 +118,17 @@ func gas(instructions []Instruction) error {
 	cmd := exec.Command(app, arg0, arg1, arg2, arg3)
 	cmb, err := cmd.CombinedOutput()
 	if err != nil {
-		asmErrs := strings.Split(string(cmb)[len(asmFile)+1:], ":")
-		asmErr := strings.Join(asmErrs[1:], ":")
-		// TODO: Fix proper error reporting
+		if len(cmb) > 0 {
+			asmErrs := strings.Split(string(cmb)[len(asmFile)+1:], ":")
+			asmErr := strings.Join(asmErrs[1:], ":")
+			// TODO: Fix proper error reporting
+			lineno := -1
+			instr := "TODO: fix"
+			return errors.New(fmt.Sprintf("Nasm error (line %d for '%s'): content %q", lineno+1, strings.TrimSpace(instr)+asmErr, contentForDebugging))
+		}
 		lineno := -1
 		instr := "TODO: fix"
-		return errors.New(fmt.Sprintf("GAS error (line %d for '%s'):", lineno+1, strings.TrimSpace(instr)) + asmErr)
+		return errors.New(fmt.Sprintf("Nasm error (line %d for '%s'): content %q", lineno+1, strings.TrimSpace(instr), contentForDebugging))
 	}
 
 	opcodes, err := toPlan9sGas(lisFile)

@@ -3,5 +3,5 @@ package main
 import "testing"
 
 func TestPayload(t *testing.T) {
-	payload("example.s")
+	payload("payload.s")
 }

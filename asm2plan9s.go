@@ -50,11 +50,16 @@ func (a *Assembler) assemble(lines []string) ([]string, error) {
 		startsWithTab := strings.HasPrefix(line, "\t")
 		line := strings.Replace(line, "\t", "    ", -1)
 		fields := strings.Split(line, "//")
+
+		//log.Printf("%v: line %q; len(fields[0]) = %v", lineno, line, len(fields[0]))
+
 		if len(fields) == 2 && (startsAfterLongWordByteSequence(fields[0]) || len(fields[0]) == 65) {
 
 			// test whether string before instruction is terminated with a backslash (so used in a #define)
 			trimmed := strings.TrimSpace(fields[0])
 			inDefine := len(trimmed) > 0 && string(trimmed[len(trimmed)-1]) == `\`
+
+			log.Printf("going to compile %q with nasm", fields[1])
 
 			// While prescanning collect the instructions
 			if a.Prescan {
@@ -93,6 +98,8 @@ func (a *Assembler) assemble(lines []string) ([]string, error) {
 // startsAfterLongWordByteSequence determines if an assembly instruction
 // starts on a position after a combination of LONG, WORD, BYTE sequences
 func startsAfterLongWordByteSequence(prefix string) bool {
+
+	//log.Printf("startsAfterLongWordByteSequence %q", prefix)
 
 	if len(strings.TrimSpace(prefix)) != 0 && !strings.HasPrefix(prefix, "    LONG $0x") &&
 		!strings.HasPrefix(prefix, "    WORD $0x") && !strings.HasPrefix(prefix, "    BYTE $0x") {
