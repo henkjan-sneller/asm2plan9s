@@ -220,13 +220,7 @@ func assemble(lines []string, compact bool) (result []string, err error) {
 	return result, nil
 }
 
-func main() {
-
-	file := ""
-	if len(os.Args) >= 2 {
-		file = os.Args[1]
-	}
-
+func payload(file string) {
 	var lines []string
 	var err error
 	if len(file) > 0 {
@@ -249,4 +243,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("writeLines: %s", err)
 	}
+}
+
+func main() {
+	file := ""
+	if len(os.Args) >= 2 {
+		file = os.Args[1]
+	}
+	payload(file)
 }

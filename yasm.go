@@ -54,7 +54,7 @@ func yasm(instructions []Instruction) error {
 func yasmSingle(instr string, lineno, commentPos int, inDefine bool) (string, []byte, error) {
 
 	instrFields := strings.Split(instr, "/*")
-	content := []byte("[bits 64]\n" + instrFields[0])
+	content := []byte("bits 64\n" + instrFields[0])
 	tmpfile, err := ioutil.TempFile("", "asm2plan9s")
 	if err != nil {
 		return "", nil, err
@@ -67,6 +67,8 @@ func yasmSingle(instr string, lineno, commentPos int, inDefine bool) (string, []
 		return "", nil, err
 	}
 
+	//fmt.Println(string(content))
+
 	asmFile := tmpfile.Name() + ".asm"
 	objFile := tmpfile.Name() + ".obj"
 	os.Rename(tmpfile.Name(), asmFile)
@@ -74,7 +76,7 @@ func yasmSingle(instr string, lineno, commentPos int, inDefine bool) (string, []
 	defer os.Remove(asmFile) // clean up
 	defer os.Remove(objFile) // clean up
 
-	app := "yasm"
+	app := "nasm"
 
 	arg0 := "-o"
 	arg1 := objFile
@@ -84,11 +86,11 @@ func yasmSingle(instr string, lineno, commentPos int, inDefine bool) (string, []
 	cmb, err := cmd.CombinedOutput()
 	if err != nil {
 		if len(string(cmb)) == 0 { // command invocation failed
-			return "", nil, errors.New("exec error: YASM not installed?")
+			return "", nil, errors.New("exec error: NASM not installed?")
 		}
 		yasmErrs := strings.Split(string(cmb)[len(asmFile)+1:], ":")
 		yasmErr := strings.Join(yasmErrs[1:], ":")
-		return "", nil, errors.New(fmt.Sprintf("YASM error (line %d for '%s'):", lineno+1, strings.TrimSpace(instr)) + yasmErr)
+		return "", nil, errors.New(fmt.Sprintf("NASM error (line %d for '%s'):", lineno+1, strings.TrimSpace(instr)) + yasmErr)
 	}
 
 	return toPlan9sYasm(objFile, instr, commentPos, inDefine)
