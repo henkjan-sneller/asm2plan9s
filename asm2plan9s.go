@@ -51,9 +51,12 @@ func (a *Assembler) assemble(lines []string) ([]string, error) {
 		line := strings.Replace(line, "\t", "    ", -1)
 		fields := strings.Split(line, "//")
 
+		// if the line has 60 characters (or 15 tabs) then the line is considered for replacement
+		criteria := startsAfterLongWordByteSequence(fields[0]) || (len(fields[0]) == 60)
+
 		//log.Printf("%v: line %q; len(fields[0]) = %v", lineno, line, len(fields[0]))
 
-		if len(fields) == 2 && (startsAfterLongWordByteSequence(fields[0]) || len(fields[0]) == 65) {
+		if len(fields) == 2 && criteria {
 
 			// test whether string before instruction is terminated with a backslash (so used in a #define)
 			trimmed := strings.TrimSpace(fields[0])
